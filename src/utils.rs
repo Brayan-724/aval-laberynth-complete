@@ -1,10 +1,11 @@
+use crate::map::Map;
 use crate::Cell;
 
-pub fn print_map(map: &Vec<Vec<Cell>>) {
+pub fn print_map(map: &Map) {
     let n = map.len();
     let mut s = String::with_capacity(n.pow(2) * 3);
 
-    for (y, row) in map.iter().enumerate() {
+    for (y, row) in map.iter_rows().enumerate() {
         for (x, cell) in row.iter().enumerate() {
             s.push(match cell {
                 Cell::Wall => {

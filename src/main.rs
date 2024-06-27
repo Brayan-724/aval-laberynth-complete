@@ -2,28 +2,14 @@ extern crate plotters;
 extern crate plotters_backend;
 extern crate rand;
 
+mod map;
 mod utils;
-mod worker_bot;
 
+use map::{Cell, Map, Pos, WaySide, WayVariants};
 use utils::print_map;
 
 use rand::rngs::ThreadRng;
 use rand::Rng;
-use worker_bot::Bot;
-
-#[derive(Clone, PartialEq, Eq)]
-pub enum Cell {
-    Path,
-    Wall,
-    Bot,
-}
-
-enum Diff {
-    XPositive,
-    XNegative,
-    YPositive,
-    YNegative,
-}
 
 // const OUT_FILE_NAME: &str = "output.gif";
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -41,60 +27,85 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn generate_laberynth(map: &mut Vec<Vec<Cell>>, r: &mut ThreadRng) {
+fn generate_laberynth(map: &mut Map, r: &mut ThreadRng) {
     let n = map.len();
 
-    let mut bot_start = Bot::new((1, 1));
-    let mut bot_end = Bot::new((n - 3, n - 3));
+    map.set_unchecked((1, 1), Cell::Bot);
+    map.set_unchecked((n - 2, n - 2), Cell::Bot);
 
-    print_map(map);
+    let start_exit = r.gen_bool(0.5);
+    let end_exit = r.gen_bool(0.5);
 
-    loop {
-        let a_ended = bot_start.update(map, r, &bot_end);
-        if a_ended {
-            println!("Ended from start");
-        } else {
+    let start_pos = if start_exit {
+        map.set_unchecked((1, 2), Cell::Bot);
+        map.set_unchecked((2, 1), Cell::Wall);
+
+        (WaySide::South, (1, 2))
+    } else {
+        map.set_unchecked((1, 2), Cell::Wall);
+        map.set_unchecked((2, 1), Cell::Bot);
+
+        (WaySide::East, (2, 1))
+    };
+
+    if end_exit {
+        map.set_unchecked((n - 2, n - 3), Cell::Bot);
+        map.set_unchecked((n - 3, n - 2), Cell::Wall);
+    } else {
+        map.set_unchecked((n - 2, n - 3), Cell::Wall);
+        map.set_unchecked((n - 3, n - 2), Cell::Bot);
+    }
+
+    let mut start_ways: Vec<(WaySide, Pos)> = vec![start_pos];
+
+    for _ in 0..5 {
+        let ways = start_ways.clone();
+        start_ways = vec![];
+
+        for (side, way_pos) in ways {
+            let variant = WayVariants::get_random(r);
+
+            println!("{variant:#?}: {start_ways:?}");
+
+            for new_way in map.set_way(way_pos, side, variant).into_iter() {
+                start_ways.push(new_way);
+            }
+
             print_map(map);
-        }
-
-        let b_ended = bot_end.update(map, r, &bot_start);
-        if b_ended {
-            println!("Ended from end");
-        } else {
-            print_map(map);
-        }
-
-        if a_ended && b_ended {
-            break;
+            std::thread::sleep(std::time::Duration::from_millis(500));
         }
     }
+
+    // for x in 1..n - 1 {
+    //     for y in 1..n - 1 {
+    //         if x == 1 && y == 1 {
+    //             continue;
+    //         }
+    //
+    //         let cell = if r.gen_bool(1.0 / 2.0) {
+    //             Cell::Wall
+    //         } else {
+    //             Cell::Path
+    //         };
+    //
+    //         map.set_unchecked((x, y), cell);
+    //     }
+    // }
 }
 
-fn init_map(n: usize) -> Vec<Vec<Cell>> {
-    let mut map = Vec::with_capacity(n);
+fn init_map(n: usize) -> Map {
+    let mut map = Map::new(n);
 
-    for _ in 0..n {
-        let mut row = Vec::with_capacity(n);
+    for y in 0..n {
+        let row = map.get_unchecked_row_mut(y);
 
-        for _ in 0..n {
-            row.push(Cell::Path)
-        }
-
-        map.push(row);
+        row[0] = Cell::Wall;
+        row[n - 1] = Cell::Wall;
     }
 
-    unsafe {
-        for y in 0..n {
-            let row = map.get_unchecked_mut(y);
-
-            row[0] = Cell::Wall;
-            row[n - 1] = Cell::Wall;
-        }
-
-        for x in 0..n {
-            map.get_unchecked_mut(0)[x] = Cell::Wall;
-            map.get_unchecked_mut(n - 1)[x] = Cell::Wall;
-        }
+    for x in 0..n {
+        map.set_unchecked((0, x), Cell::Wall);
+        map.set_unchecked((n - 1, x), Cell::Wall);
     }
 
     map
