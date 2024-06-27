@@ -1,0 +1,7 @@
+[package]
+name = "pye-laberynth"
+
+[dependencies]
+plotters.workspace = true
+plotters-backend.workspace = true
+rand.workspace = true
