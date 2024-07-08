@@ -136,16 +136,6 @@ fn cell_rectangle(
 
     chart.draw(Polygon::new(points, color.filled()))?;
 
-    // chart.draw(Rectangle::new([(x, y), (x + 1., y + 1.)], color.filled()))?;
-
-    // if let Cell::Bot(cost) = cell {
-    //     chart.draw_text(
-    //         &format!("{cost:0>2x}"),
-    //         (x + 0.2, y + 0.2),
-    //         ("noto sans", 30).into_font().color(&BLACK),
-    //     )?;
-    // }
-
     Ok(())
 }
 

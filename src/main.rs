@@ -55,12 +55,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     generate_laberynth(&mut map, &mut r, &mut ctx)?;
     print_map(&mut map, &mut ctx)?;
+    ctx.present()?;
 
     fix_it(&mut map, &mut r, &mut ctx)?;
     print_map(&mut map, &mut ctx)?;
+    ctx.present()?;
 
     resolve_it(&mut map, &mut ctx)?;
     print_map(&mut map, &mut ctx)?;
+    ctx.present()?;
 
     ctx.present()?;
 
